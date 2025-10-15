@@ -1,0 +1,15 @@
+rules:
+  - id: suspicious_yield
+    when: "apr > 100"
+    weight: 40
+    why: "APR>100"
+  - id: young_contract
+    when: "contract_age_days < 7"
+    weight: 30
+    why: "age<7d"
+  - id: unverified_protocol
+    when: "protocol.lower() in {'unknown','custom'}"
+    weight: 20
+    why: "no registry"
+scoring:
+  cap: 100
