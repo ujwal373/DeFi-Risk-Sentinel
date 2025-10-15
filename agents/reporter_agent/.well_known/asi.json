@@ -1,0 +1,8 @@
+{
+    "chat": {
+      "enabled": true,
+      "commands": ["/risk", "/explain"],
+      "description": "Risk score and explainability agent for DeFi wallets"
+    }
+  }
+  
