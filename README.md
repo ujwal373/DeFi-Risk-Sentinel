@@ -31,3 +31,6 @@ python agents/reporter_agent/reporter_agent.py
 # Streamlit dashboard
 cd streamlit_app
 streamlit run dashboard.py
+```
+
+# Project in active development — soon integrating real on-chain data and dynamic user wallet input.
