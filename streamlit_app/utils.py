@@ -1,4 +1,7 @@
 import httpx, os
+from dotenv import load_dotenv
+load_dotenv()
+
 WATCHER = os.getenv("WATCHER_URL", "http://127.0.0.1:8000")
 AGG = os.getenv("AGGREGATOR_URL", "http://127.0.0.1:8001")
 REP = os.getenv("REPORTER_URL", "http://127.0.0.1:8002")

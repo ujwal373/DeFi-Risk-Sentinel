@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from shared.schemas import OnChainEvent, RiskResult
 from .rules import load_rules, evaluate
+from dotenv import load_dotenv
+load_dotenv()
+
 
 app = FastAPI(title="Analyzer")
 RULESET = load_rules()

@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import httpx, os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 AGG = os.getenv("AGGREGATOR_URL","http://127.0.0.1:8001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
