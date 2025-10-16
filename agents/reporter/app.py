@@ -12,6 +12,13 @@ class ChatQuery(BaseModel):
     cmd: str
     arg: str|None=None
 
+async def get_risk_from_tx(tx_hash: str):
+    async with httpx.AsyncClient() as c:
+        r = await c.get(f"{AGG}/tx/{tx_hash}")
+        if r.status_code == 200:
+            return r.json()
+    return None
+
 @app.post("/chat")
 async def chat(q: ChatQuery):
     if q.cmd == "/risk" and q.arg:
@@ -27,31 +34,30 @@ async def chat(q: ChatQuery):
 
 @app.get("/explain/{tx_hash}")
 async def explain_tx(tx_hash: str):
-    async with httpx.AsyncClient() as c:
-        r = await c.get(f"{AGG}/tx/{tx_hash}")
-    if r.status_code != 200 or r.json() is None:
+    risk = await get_risk_from_tx(tx_hash)
+    if not risk:
         return {"reply": f"Tx {tx_hash} not found."}
-    risk = r.json()
+    
     base = f"Tx {tx_hash}: Risk {risk['score']}/100. Flags: {', '.join(risk['flags'])}. Because: {', '.join(risk['rationale'])}."
+    
     if not OPENAI_API_KEY:
         return {"reply": base + " (LLM disabled)"}
-    # Optional LLM rationale
+
     try:
         from openai import OpenAI
         client = OpenAI(api_key=OPENAI_API_KEY)
         prompt = (
-          "Explain the following DeFi risk assessment for a non-expert.\n"
-          f"Wallet: {risk['wallet']}\n"
-          f"Score: {risk['score']}\n"
-          f"Flags: {risk['flags']}\n"
-          f"Rationale: {risk['rationale']}\n"
-          "Advise simple next steps (read-only, no financial advice)."
+            f"This transaction has a risk score of {risk['score']}/100.\n"
+            f"Flags: {', '.join(risk['flags'])}\n"
+            f"Rationale: {', '.join(risk['rationale'])}\n"
+            "Explain the risk in simple terms and recommend what a DeFi user should do (no financial advice)."
         )
-        resp = client.chat.completions.create(
+        response = client.chat.completions.create(
             model=OPENAI_MODEL,
-            messages=[{"role":"user","content": prompt}],
-            temperature=0.2,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
         )
-        return {"reply": resp.choices[0].message.content.strip()}
+        return {"reply": response.choices[0].message.content.strip()}
     except Exception as e:
         return {"reply": base + f" (LLM error: {e})"}
+
