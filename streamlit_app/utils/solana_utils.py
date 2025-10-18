@@ -1,4 +1,6 @@
 import os, httpx
+from dotenv import load_dotenv
+load_dotenv()
 
 API_KEY = os.getenv("HELIUS_API_KEY")
 BASE_URL = "https://api.helius.xyz/v0"

@@ -1,49 +1,35 @@
 # streamlit_app/utils/risk_engine.py
 
-def compute_solana_risk(tx_data: dict) -> dict:
-    if "error" in tx_data:
+def compute_solana_risk(tx_data):
+    if isinstance(tx_data, dict) and "error" in tx_data:
         return {
             "risk_score": 90,
-            "flags": ["invalid_address"],
-            "reason": "Address invalid or no transactions found."
+            "reason": "Address invalid or no transactions found.",
+            "flags": ["invalid_address"]
         }
 
-    txs = tx_data.get("transactions", [])
+    txs = tx_data if isinstance(tx_data, list) else []
+
     flags = []
-    score = 30  # start with a base of 30/100
+    risk_score = 0
 
-    if len(txs) == 0:
-        score = 95
-        flags.append("empty_history")
-        reason = "No transaction history found."
-    else:
-        if len(txs) < 3:
-            score += 20
-            flags.append("low_activity")
+    if len(txs) > 10:
+        flags.append("high_activity")
+        risk_score += 20
 
-        for tx in txs:
-            if tx.get("err") is not None:
-                score += 20
-                flags.append("tx_error")
+    for tx in txs:
+        if tx.get("type") == "Unknown":
+            flags.append("unknown_type")
+            risk_score += 10
 
-            if tx.get("instructions", 0) > 10:
-                score += 10
-                flags.append("high_instruction_tx")
+        if tx.get("tokenTransfers"):
+            flags.append("token_transfer_detected")
+            risk_score += 15
 
-            # Optional: Check suspiciously large balance change
-            post_bal = tx.get("post_balances", [])
-            if post_bal and len(post_bal) >= 2:
-                delta = abs(post_bal[0] - post_bal[1])
-                if delta > 1_000_000_000:  # > 1 SOL
-                    score += 15
-                    flags.append("large_balance_change")
-
-        # Normalize score
-        score = min(score, 100)
-        reason = "Flags triggered: " + ", ".join(flags) if flags else "No major risk indicators."
+    risk_score = min(risk_score, 100)
 
     return {
-        "risk_score": score,
-        "flags": flags,
-        "reason": reason
+        "risk_score": risk_score,
+        "reason": "Heuristic-based Solana risk assessment",
+        "flags": list(set(flags))
     }
