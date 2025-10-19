@@ -33,3 +33,26 @@ def compute_solana_risk(tx_data):
         "reason": "Heuristic-based Solana risk assessment",
         "flags": list(set(flags))
     }
+
+# streamlit_app/utils/risk_engine.py
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def explain_tx_with_llm(tx_summary: dict) -> str:
+    try:
+        prompt = f"""You are a DeFi analyst. Explain the following Solana transaction in simple terms:
+
+Transaction:
+{tx_summary}
+
+Be concise and user-friendly."""
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"⚠️ Error explaining tx: {e}"

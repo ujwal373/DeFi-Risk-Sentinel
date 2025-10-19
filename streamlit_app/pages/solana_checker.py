@@ -26,3 +26,14 @@ if wallet_address and st.button("Scan Now"):
     st.divider()
     st.subheader("🧾 Recent Transactions")
     st.json(tx_data)
+
+from utils.risk_engine import compute_solana_risk, explain_tx_with_llm
+
+# After showing tx.json() in the for loop
+for i, tx in enumerate(txs[:5]):
+    st.json(tx)
+    if st.button(f"🔎 Explain Tx {i+1}", key=f"explain_btn_{i}"):
+        with st.spinner("Asking GPT..."):
+            explanation = explain_tx_with_llm(tx)
+            st.markdown(f"**🧠 GPT Summary:**\n\n{explanation}")
+    st.divider()
