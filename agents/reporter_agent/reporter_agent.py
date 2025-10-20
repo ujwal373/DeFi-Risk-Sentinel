@@ -7,7 +7,7 @@ load_dotenv()
 
 AGG = os.getenv("AGGREGATOR_URL", "http://127.0.0.1:8001")
 REP = os.getenv("REPORTER_URL", "http://127.0.0.1:8002")
-LLM_API = os.getenv("LLM_API", "http://localhost:11434/api/generate")  # local model default
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 agent = Agent(name="reporter_agent")
 protocol = Protocol(name="chat-protocol")
@@ -46,23 +46,35 @@ async def handle_chat(ctx: Context, msg: ChatInput):
             return
         wallet = parts[1]
 
-        # Step 1: Get raw risk data
+        # Step 1: Fetch risk explanation from reporter
         async with httpx.AsyncClient() as c:
-            risk_resp = await c.get(f"{REP}/explain/{wallet}")
-        result = risk_resp.json()
-        reasoning_prompt = f"""
-        A wallet risk analysis was conducted with the following flags and reasons:
-        {result.get('reply', '')}
-        
-        Based on the above, explain in simple terms why this wallet might be risky.
-        Suggest what actions the user could take.
-        """
+            resp = await c.get(f"{REP}/explain/{wallet}")
+        base_reasoning = resp.json().get("reply", "No data")
 
-        # Step 2: Ask the LLM
-        async with httpx.AsyncClient() as c:
-            llm_resp = await c.post(LLM_API, json={"prompt": reasoning_prompt, "stream": False})
-        output = llm_resp.json()
-        reply = output.get("response") or output.get("text", "No explanation generated.")
+        # Step 2: Compose prompt for OpenAI
+        openai_payload = {
+            "model": "gpt-3.5-turbo",  # or "gpt-4" if needed
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert DeFi risk analyst explaining risks to a beginner user in simple terms."
+                },
+                {
+                    "role": "user",
+                    "content": f"""Given this wallet risk report:\n{base_reasoning}\n\nExplain what makes this wallet risky. Use simple language, suggest actions if needed."""
+                }
+            ]
+        }
+
+        headers = {
+            "Authorization": f"Bearer {OPENAI_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # Step 3: Call OpenAI API
+        async with httpx.AsyncClient() as client:
+            response = await client.post("https://api.openai.com/v1/chat/completions", json=openai_payload, headers=headers)
+        reply = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error processing response")
 
         await ctx.send(ctx.sender, reply)
 
