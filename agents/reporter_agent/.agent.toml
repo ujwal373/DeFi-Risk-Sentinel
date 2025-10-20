@@ -1,9 +1,0 @@
-[agent]
-name = "reporter_agent"
-description = "Responds to wallet risk and transaction explainability queries"
-endpoint = "http://localhost:8009"
-
-[metadata]
-language = "python"
-framework = "uAgents"
-chat_enabled = true

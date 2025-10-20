@@ -1,0 +1,7 @@
+name = "reporter_agent"
+description = "Analyzes DeFi wallets and explains risks using AI reasoning"
+endpoint = "http://localhost:8002"
+developer = "Ujwal Mojidra"
+email = "ujwal.mojidra@gmail.com"
+tags = ["defi", "risk", "openai", "chat", "fetchai"]
+language = "python"
